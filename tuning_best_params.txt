@@ -1,0 +1,10 @@
+=== LIGHTGBM TUNING RESULTS ===
+Date: 2026-02-10 20:30:38
+Tuning Time: 2222.59 seconds
+Best RMSE: 0.5578
+
+Best Parameters:
+   num_leaves = 127
+   n_estimators = 1000
+   min_child_samples = 100
+   learning_rate = 0.005

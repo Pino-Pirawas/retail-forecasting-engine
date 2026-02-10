@@ -1,0 +1,21 @@
+# --- .gitignore ---
+
+# Ignore huge data files
+*.csv
+*.xlsx
+data/
+
+# Ignore compiled python files (junk)
+__pycache__/
+*.pyc
+
+# Ignore system files
+.DS_Store
+
+# Ignore the virtual environment (if you have one)
+env/
+venv/
+.env
+
+# Optional: Ignore the trained model if it's huge (>100MB)
+# *.pkl
