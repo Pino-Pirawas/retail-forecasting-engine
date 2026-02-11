@@ -20,8 +20,8 @@ FEATURE_COLUMNS = [
     'price', 
     'is_on_display',      
     'is_in_mailer',       
-    'day_of_week_sin', 
-    'day_of_week_cos',
+    'week_of_year_sin',
+    'week_of_year_cos',
     'lag_7_sales',        
     'rolling_mean_4w'     
 ]

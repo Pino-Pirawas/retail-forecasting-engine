@@ -42,7 +42,12 @@ def visualize_operations():
     # Filter out extreme outliers for a cleaner view
     df_box = df[df['predicted_sales'] < 10].copy()
     
-    sns.boxplot(x='is_on_display', y='predicted_sales', data=df_box, ax=axes[1], palette='Set2')
+    sns.boxplot(
+        x='is_on_display', y='predicted_sales',
+        hue='is_on_display', data=df_box,
+        ax=axes[1], palette='Set2', legend=False
+    )
+    axes[1].set_xticks([0, 1])
     axes[1].set_xticklabels(['No Display', 'On Display'])
     axes[1].set_title('Impact of Displays on Sales', fontsize=12, fontweight='bold')
     axes[1].set_xlabel('')

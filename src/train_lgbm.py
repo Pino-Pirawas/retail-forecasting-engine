@@ -35,11 +35,19 @@ def train_lightgbm():
         'objective': 'regression',
         'metric': 'rmse',
         'boosting_type': 'gbdt',
-        'n_estimators': 2000,       
-        'learning_rate': 0.01,      
-        'num_leaves': 127,          
-        'min_child_samples': 100,   
-        'n_jobs': -1,               
+        'n_estimators': 2000,
+        'learning_rate': 0.01,
+        'num_leaves': 127,
+        'min_child_samples': 100,
+
+        'lambda_l1': 0.0,
+        'lambda_l2': 5.0,
+
+        'feature_fraction': 0.8,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 1,
+
+        'n_jobs': -1,
         'verbose': -1,
         'seed': 42
     }

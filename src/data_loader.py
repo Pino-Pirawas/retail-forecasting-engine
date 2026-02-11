@@ -10,6 +10,38 @@ class RetailDataLoader:
         self.paths = config.DATA_PATHS
         self.df = None
         self.df_clean = None
+
+    def _clean_transactions(self, trans_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Fix/handle known transaction anomalies:
+        - Negative dollar_sales (likely returns / reversals) -> DROP
+        - Zero dollar_sales with positive units -> DROP
+        Notes:
+        - We only drop rows that cause invalid pricing logic (negative/zero price with positive units).
+        - Everything else remains unchanged.
+        """
+        target = config.TARGET_COLUMN
+
+        # Flags (kept for auditing/debugging; won't affect training unless included in FEATURE_COLUMNS)
+        trans_df["flag_negative_sales"] = trans_df["dollar_sales"] < 0
+        trans_df["flag_zero_sales_pos_units"] = (trans_df["dollar_sales"] == 0) & (trans_df[target] > 0)
+
+        before = len(trans_df)
+
+        # Drop rows that break the core pricing logic
+        drop_mask = trans_df["flag_negative_sales"] | trans_df["flag_zero_sales_pos_units"]
+        dropped_negative = int(trans_df["flag_negative_sales"].sum())
+        dropped_zero_sales = int(trans_df["flag_zero_sales_pos_units"].sum())
+
+        trans_df = trans_df.loc[~drop_mask].copy()
+
+        after = len(trans_df)
+        print("Transaction cleaning summary:")
+        print(f"- Dropped negative dollar_sales rows: {dropped_negative}")
+        print(f"- Dropped zero dollar_sales with positive units rows: {dropped_zero_sales}")
+        print(f"- Rows before: {before:,} -> after: {after:,}")
+
+        return trans_df
         
     def load_and_merge(self):
         print("Loading CSV files...")
@@ -30,6 +62,9 @@ class RetailDataLoader:
         # 3. Rename Target to match Config (units -> units_sold)
         if 'units' in trans_df.columns:
             trans_df = trans_df.rename(columns={'units': config.TARGET_COLUMN})
+
+        # FIX: Clean known anomalies before computing price
+        trans_df = self._clean_transactions(trans_df)
         
         # 4. Calculate Price (The missing column!)
         # Avoid division by zero by replacing 0 units with 1 (rare edge case)
@@ -78,9 +113,9 @@ class RetailDataLoader:
         else:
             df['is_in_mailer'] = 0
         
-        # Time features
-        df['day_of_week_sin'] = np.sin(2 * np.pi * df['week'] / 52)
-        df['day_of_week_cos'] = np.cos(2 * np.pi * df['week'] / 52)
+        # Time features (Week-of-Year Seasonality)
+        df['week_of_year_sin'] = np.sin(2 * np.pi * df['week'] / 52)
+        df['week_of_year_cos'] = np.cos(2 * np.pi * df['week'] / 52)
         
         # Lag Features (Sorting is critical here)
         df = df.sort_values(['store', 'upc', 'week'])
@@ -96,7 +131,9 @@ class RetailDataLoader:
         df = df.dropna(subset=['lag_7_sales', 'rolling_mean_4w', 'price'])
         
         # Select final columns
-        self.df_clean = df[config.FEATURE_COLUMNS + [config.TARGET_COLUMN]]
+        # Keep identifiers so downstream insight/strategy code can segment and export actionable results.
+        id_cols = [c for c in ['store', 'upc', 'week'] if c in df.columns]
+        self.df_clean = df[id_cols + config.FEATURE_COLUMNS + [config.TARGET_COLUMN]]
         print(f"Final training data shape: {self.df_clean.shape}")
         return self.df_clean
 
